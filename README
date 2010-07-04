@@ -1,0 +1,19 @@
+Java Grading Tools
+
+Authors
+===========================================================
+Steven Karas
+Idan Felix
+The entire Intro2CS team
+
+Description
+===========================================================
+This project is the result of several years of work by various TAs at the Interdisciplinary Center
+of Herzliyah, Israel. The project currently has two components:
+
+1. Reflection - used to test API compliance. Purely academic applications.
+2. I/O Redirection - used to script tests that use stdin, stdout.
+
+Usage
+===========================================================
+The IOUtils and ReflectionUtils classes expose the public API of this project. See javadoc for more.
