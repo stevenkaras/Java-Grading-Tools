@@ -1,4 +1,24 @@
-package grading;
+/**
+ * TestInputStream.java
+ * 
+ * Copyright (C) 2010
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * See README for contact information. See LICENSE for GPL license
+ */
+
+package grading.io;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -55,7 +75,7 @@ public class TestInputStream extends java.io.PipedInputStream {
 	 * @param line
 	 *            the line to add to the input
 	 */
-	static void addLine(String line) {
+	public static void addLine(String line) {
 		myBuffer.outPipePrinter.println(line);
 	}
 
@@ -67,7 +87,7 @@ public class TestInputStream extends java.io.PipedInputStream {
 	 * @param text
 	 *            the text to add to the input
 	 */
-	static void addText(String text) {
+	public static void addText(String text) {
 		myBuffer.outPipePrinter.print(text);
 	}
 
@@ -78,11 +98,11 @@ public class TestInputStream extends java.io.PipedInputStream {
 	 *            the file path and name to add to the input
 	 * @throws IOException 
 	 */
-	static void addFile(String filepath) throws IOException {
+	public static void addFile(String filepath) throws IOException {
 		addFile(new File(filepath));
 	}
 	
-	static void addFile(File file) throws IOException {
+	public static void addFile(File file) throws IOException {
 		// start reading in the file
 		BufferedReader read = new BufferedReader(new FileReader(file));
 		while (read.ready()) {
@@ -98,11 +118,11 @@ public class TestInputStream extends java.io.PipedInputStream {
 	 * May be reloaded at any time by calling {@link #load()}
 	 * 
 	 */
-	static void unload() {
+	public static void unload() {
 		System.setIn(myBuffer.stdin);
 	}
 
-	static void load() {
+	public static void load() {
 		if (System.in == myBuffer)
 			return; // we're already loaded, so do nothing
 		else {

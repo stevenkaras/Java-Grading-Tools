@@ -1,4 +1,24 @@
-package grading;
+/**
+ * TestPrintStream.java
+ * 
+ * Copyright (C) 2010
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * See README for contact information. See LICENSE for GPL license
+ */
+
+package grading.io;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -23,14 +43,14 @@ public class TestPrintStream extends PrintStream {
 	 * Disables output capturing. Call this method after you're done doing
 	 * expect.
 	 */
-	static void disable() {
+	public static void disable() {
 		System.setOut(monitor.stdout);
 	}
 
 	/**
 	 * Enables output capturing. Call this method before you do an expect.
 	 */
-	static void enable() {
+	public static void enable() {
 		System.setOut(monitor);
 	}
 
@@ -40,7 +60,7 @@ public class TestPrintStream extends PrintStream {
 	 * 
 	 * @return a copy of the captured output
 	 */
-	static String getBuffer() {
+	public static String getBuffer() {
 		// create a finalized copy of the buffer
 		String buf = monitor.outputBuffer.toString();
 		// and flush the buffer
