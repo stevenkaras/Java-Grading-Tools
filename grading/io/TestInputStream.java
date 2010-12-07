@@ -36,8 +36,8 @@ import java.io.PrintStream;
  * computer/code/JVM/ego. I just don't care.
  * <p>
  * Behavior in general follows:<br>
- * If we have input buffered, offer it first.
- * Afterwards, offer the read stdin if not.
+ * If we have input buffered, offer it first. Afterwards, offer the read stdin
+ * if not.
  * 
  * @author Steven Karas
  * @version 2.0
@@ -58,7 +58,8 @@ public class TestInputStream extends java.io.PipedInputStream {
 		try {
 			myBuffer = new TestInputStream();
 		} catch (IOException e) {
-			throw new IllegalStateException("Couldn't construct TestInputStream Singleton", e);
+			throw new IllegalStateException(
+					"Couldn't construct TestInputStream Singleton", e);
 		}
 	}
 
@@ -96,12 +97,12 @@ public class TestInputStream extends java.io.PipedInputStream {
 	 * 
 	 * @param filepath
 	 *            the file path and name to add to the input
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public static void addFile(String filepath) throws IOException {
 		addFile(new File(filepath));
 	}
-	
+
 	public static void addFile(File file) throws IOException {
 		// start reading in the file
 		BufferedReader read = new BufferedReader(new FileReader(file));
@@ -174,19 +175,12 @@ public class TestInputStream extends java.io.PipedInputStream {
 	}
 
 	public int read(byte[] b) throws IOException {
-		if (this.available() >= b.length) {
-			return super.read(b);
-		} else {
-			return stdin.read(b);
-		}
+		return this.read(b, 0, b.length);
 	}
 
 	public int read(byte[] b, int off, int len) throws IOException {
-		if (this.available() >= len) {
-			return super.read(b, off, len);
-		} else {
-			return stdin.read(b, off, len);
-		}
+		// we don't allow passthough at the moment, since it was causing issues
+		return super.read(b, 0, len);
 	}
 
 	public boolean markSupported() {

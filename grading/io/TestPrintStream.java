@@ -20,9 +20,8 @@
 
 package grading.io;
 
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.Locale;
 
 /**
  * This class captures output sent to stdout, to easily facilitate unit testing.
@@ -34,10 +33,11 @@ import java.util.Locale;
  * @author Steven Karas
  * @version 2.0
  */
-public class TestPrintStream extends PrintStream {
+public class TestPrintStream {
 	private PrintStream stdout;
-	private StringBuffer outputBuffer;
-	private static TestPrintStream monitor = new TestPrintStream(System.out);
+	private ByteArrayOutputStream outputBuffer;
+	private MultiplexingPrintStream splitter;
+	private static TestPrintStream monitor = new TestPrintStream();
 
 	/**
 	 * Disables output capturing. Call this method after you're done doing
@@ -51,7 +51,7 @@ public class TestPrintStream extends PrintStream {
 	 * Enables output capturing. Call this method before you do an expect.
 	 */
 	public static void enable() {
-		System.setOut(monitor);
+		System.setOut(monitor.splitter);
 	}
 
 	/**
@@ -64,19 +64,18 @@ public class TestPrintStream extends PrintStream {
 		// create a finalized copy of the buffer
 		String buf = monitor.outputBuffer.toString();
 		// and flush the buffer
-		monitor.outputBuffer.setLength(0);
+		monitor.outputBuffer.reset();
 		return buf;
 	}
-	
+
 	/**
 	 * C-tor. Not much here.
 	 */
-	private TestPrintStream(PrintStream stdout) {
-		// tie this PrintStream to the true stdout, and enable buffer flushing
-		super(stdout, true);
+	private TestPrintStream() {
 		// store local references to the real slim shady
-		this.stdout = stdout;
-		outputBuffer = new StringBuffer("");
+		this.stdout = System.out;
+		outputBuffer = new ByteArrayOutputStream();
+		splitter = new MultiplexingPrintStream(stdout, new PrintStream(outputBuffer));
 	}
 
 	/**
@@ -92,175 +91,4 @@ public class TestPrintStream extends PrintStream {
 		}
 	}
 
-	/*******************************************************/
-	/******* Start of System.out middleman/proxy API *******/
-	/*******************************************************/
-
-	public PrintStream append(char c) {
-		outputBuffer.append(c);
-		return stdout.append(c);
-	}
-
-	public PrintStream append(CharSequence csq) {
-		outputBuffer.append(csq);
-		return stdout.append(csq);
-	}
-
-	public PrintStream append(CharSequence csq, int start, int end) {
-		outputBuffer.append(csq, start, end);
-		return stdout.append(csq, start, end);
-	}
-
-	public boolean checkError() {
-		return stdout.checkError();
-	}
-
-	public void close() {
-		stdout.close();
-	}
-
-	public void flush() {
-		stdout.flush();
-	}
-
-	public PrintStream format(Locale l, String format, Object... args) {
-		String buffer = String.format(l, format, args);
-		outputBuffer.append(buffer);
-		stdout.print(buffer);
-		return stdout;
-	}
-
-	public PrintStream format(String format, Object... args) {
-		String buffer = String.format(format, args);
-		outputBuffer.append(buffer);
-		stdout.print(buffer);
-		return stdout;
-	}
-
-	public PrintStream printf(Locale l, String format, Object... args) {
-		return this.format(l, format, args); // as per spec
-	}
-
-	public PrintStream printf(String format, Object... args) {
-		return this.format(format, args); // as per spec
-	}
-
-	public void write(byte[] b) throws IOException {
-		outputBuffer.append(b);
-		stdout.write(b);
-	}
-
-	public void print(boolean x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(boolean x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(char x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(char x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(int x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(int x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(long x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(long x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(float x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(float x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(double x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(double x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(char[] x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(char[] x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(String x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(String x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void print(Object x) {
-		outputBuffer.append(x);
-		stdout.print(x);
-	}
-
-	public void println(Object x) {
-		outputBuffer.append(x);
-		outputBuffer.append("\n");
-		stdout.println(x);
-	}
-
-	public void println() {
-		outputBuffer.append("\n");
-		stdout.println();
-	}
-
-	public void write(byte[] buffer, int offset, int length) {
-		outputBuffer.append(new String(buffer, offset, length));
-		stdout.write(buffer, offset, length);
-	}
-
-	public void write(int b) {
-		outputBuffer.append(b);
-		stdout.write(b);
-	}
 }
