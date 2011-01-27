@@ -2,6 +2,7 @@ package grading;
 
 import java.lang.reflect.Field;
 import java.security.Permission;
+import java.util.Arrays;
 
 /**
  * Utility methods for use in JUnit testsuites.
@@ -37,7 +38,11 @@ public class TestUtils {
 	 */
 	public static class NoExitException extends SecurityException {
 		private static final long serialVersionUID = 1L;
-		public NoExitException(String string) { super(string); }
+		public int status;
+		public NoExitException(int status) {
+			super("System.exit(" + status + ") called");
+			this.status = status;
+		}
 	}
 
 	private static class NoExitSecurityManager extends SecurityManager {
@@ -46,7 +51,18 @@ public class TestUtils {
 		public void checkPermission(Permission perm, Object context) {}
 		public void checkExit(int status) {
 			super.checkExit(status);
-			throw new NoExitException("System.exit(" + status + ") called");
+			NoExitException t = new NoExitException(status);
+			// remove this code from the stack trace
+			StackTraceElement[] st = t.getStackTrace();
+			for (int i = 0; i < st.length; i++) {
+				if ((!st[i].getClassName().equals(System.class.getName()))
+						|| (!st[i].getMethodName().equals("exit")))
+					continue;
+				st = Arrays.copyOfRange(st, i+1, st.length);
+				break;
+			}
+			t.setStackTrace(st);
+			throw t;
 		}
 	}
 
@@ -89,5 +105,40 @@ public class TestUtils {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * Get a field of a class, ignoring visibility modifiers. Wraps exceptions
+	 * in illegal argument exception, since this is meant for use with unit
+	 * tests. Example usage:
+	 * <p>
+	 * <pre>getField(o, "privateField", String.class)</pre> 
+	 * 
+	 * @param <T> The type of the field
+	 * @param obj The object to pull from (null if static)
+	 * @param name the name of the field
+	 * @param type the class object of the type
+	 * @return the field
+	 */
+	public static <T> T getField(Object obj, String name, Class<T> type) {
+		try {
+			Field f = obj.getClass().getDeclaredField(name);
+			f.setAccessible(true);
+			
+			if (!f.getType().equals(type))
+				throw new IllegalArgumentException("name is not of type"+type);
+			@SuppressWarnings("unchecked")
+			T t = (T) f.get(obj);
+			return t;
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(e.getMessage());
+		} catch (NoSuchFieldException e) {
+			throw new IllegalArgumentException(e.getMessage());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException(e.getMessage());
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException(e.getMessage());
+		}
+		
 	}
 }
