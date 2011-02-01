@@ -71,7 +71,7 @@ public class ReflectionUtils {
 			boolean checkPrivates) {
 		// check methods
 		List<String> results = new ArrayList<String>();
-		if (actual.getSimpleName().equals(expected.getSimpleName()))
+		if (!actual.getSimpleName().equals(expected.getSimpleName()))
 			results.add("Expected class name" + expected.getSimpleName() + " but was really: "
 					+ actual.getSimpleName());
 		if (actual.getModifiers() != expected.getModifiers())
@@ -122,19 +122,30 @@ public class ReflectionUtils {
 		List<String> results = new ArrayList<String>();
 		for (Constructor<?> ctor : actual.getDeclaredConstructors()) {
 			try {
-				Constructor<?> cantidate = expected
-						.getDeclaredConstructor(ctor.getParameterTypes());
-				if (cantidate.getModifiers() != ctor.getModifiers())
+				// find an appropriate constructor
+				Constructor<?> candidate = null;
+				for (Constructor<?> exCtor : expected.getDeclaredConstructors()) {
+					if (compareClassLists(ctor.getParameterTypes(), exCtor.getParameterTypes())) {
+						candidate = exCtor;
+						break;
+					}
+				}
+				if (candidate == null)
+					throw new NoSuchMethodException();
+				
+				// now compare modifiers
+				if (candidate.getModifiers() != ctor.getModifiers())
 					results.add(ctorSignature(ctor) + " had different modifiers than expected: "
-							+ Modifier.toString(cantidate.getModifiers()));
-				for (Class<?> extra : checkForExtrasGeneric(cantidate.getExceptionTypes(), ctor
+							+ Modifier.toString(candidate.getModifiers()));
+				// now compare throws
+				for (Class<?> extra : checkForExtrasGeneric(candidate.getExceptionTypes(), ctor
 						.getExceptionTypes())) {
 					results.add(ctorSignature(ctor) + " throws an extra type: "
 							+ extra.getSimpleName());
 				}
 				// check any other differences between actual and expected ctor
 			} catch (SecurityException e) {
-				throw new IllegalStateException(e.getMessage(), e);
+				throw new UnknownError(e.getMessage());
 			} catch (NoSuchMethodException e) {
 				if (!checkPrivates && Modifier.isPrivate(ctor.getModifiers())) {
 					continue;
@@ -145,6 +156,12 @@ public class ReflectionUtils {
 		return results;
 	}
 
+	/**
+	 * Construct a canonical signature for the given constructor
+	 * 
+	 * @param ctor
+	 * @return
+	 */
 	private static String ctorSignature(Constructor<?> ctor) {
 		StringBuilder buffer = new StringBuilder();
 		buffer.append(ctor.getDeclaringClass().getSimpleName());
@@ -175,19 +192,31 @@ public class ReflectionUtils {
 			boolean checkPrivates) {
 		List<String> results = new ArrayList<String>();
 		for (Method method : actual.getDeclaredMethods()) {
-			String methodName = method.getName();
 			try {
-				Method cantidate = expected.getDeclaredMethod(methodName, method
-						.getParameterTypes());
-				if (!cantidate.getReturnType().equals(method.getReturnType()))
+				// find an appropriate method
+				Method candidate = null;
+				for (Method exMeth : expected.getDeclaredMethods()) {
+					if (method.getName().equals(exMeth.getName()) &&
+							compareClassLists(method.getParameterTypes(), exMeth.getParameterTypes())) {
+						candidate = exMeth;
+						break;
+					}
+				}
+				if (candidate == null)
+					throw new NoSuchMethodException();
+				
+				// compare return types
+				if (!compareClasses(candidate.getReturnType(), method.getReturnType()))
 					results.add(methodSignature(method)
 							+ " had different return type than expected: "
 							+ method.getReturnType().getName());
-				if (cantidate.getModifiers() != method.getModifiers())
+				// compare modifiers
+				if (candidate.getModifiers() != method.getModifiers())
 					results.add(methodSignature(method)
 							+ " had different modifiers than expected: "
 							+ Modifier.toString(method.getModifiers()));
-				for (Class<?> extra : checkForExtrasGeneric(cantidate.getExceptionTypes(), method
+				// compare throws
+				for (Class<?> extra : checkForExtrasGeneric(candidate.getExceptionTypes(), method
 						.getExceptionTypes())) {
 					results.add(methodSignature(method) + " throws an extra type: "
 							+ extra.getSimpleName());
@@ -223,23 +252,27 @@ public class ReflectionUtils {
 		for (Field field : actual.getDeclaredFields()) {
 			if (field.isSynthetic())
 				continue; // we don't care about compiler-generated fields
+			int modifiers = field.getModifiers();
+			if (!checkPrivates && Modifier.isPrivate(modifiers)) {
+				continue;
+			}
+			if (Modifier.isPrivate(modifiers) && Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
+				// always warn on this usage
+				results.add("Private static non-final field: " + field.getName());
+				continue;
+			}
 			try {
-				Field cantidate = expected.getDeclaredField(field.getName());
-				if (field.getModifiers() != cantidate.getModifiers())
+				Field candidate = expected.getDeclaredField(field.getName());
+				if (field.getModifiers() != candidate.getModifiers())
 					results.add(fieldName(field) + " had different modifiers than expected: "
-							+ Modifier.toString(cantidate.getModifiers() ^ field.getModifiers()));
-				if (!field.getType().equals(cantidate.getType()))
+							+ Modifier.toString(candidate.getModifiers() ^ field.getModifiers()));
+				if (!compareClasses(field.getType(), candidate.getType()))
 					results.add(fieldName(field) + " had different type than expected: "
-							+ cantidate.getType().getSimpleName());
+							+ candidate.getType().getSimpleName());
 			} catch (SecurityException e) {
 				throw new IllegalStateException(e.getMessage(), e);
 			} catch (NoSuchFieldException e) {
-				int modifiers = field.getModifiers();
 				if (!checkPrivates && Modifier.isPrivate(modifiers)) {
-					if (Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
-						// always warn on this usage
-						results.add("Private static non-final field: " + field.getName());
-					}
 					continue;
 				}
 				results.add("Found extra field: " + fieldName(field));
@@ -248,12 +281,20 @@ public class ReflectionUtils {
 		return results;
 	}
 
+	/**
+	 * Compares two class arrays and returns an array of all the classes present in actuals that are
+	 * not in expecteds.
+	 * 
+	 * @param expecteds
+	 * @param actuals
+	 * @return
+	 */
 	private static Class<?>[] checkForExtrasGeneric(Class<?>[] expecteds, Class<?>[] actuals) {
 		ArrayList<Class<?>> temp = new ArrayList<Class<?>>();
 		for (Class<?> actual : actuals) {
 			boolean found = false;
 			for (Class<?> expected : expecteds) {
-				if (actual.equals(expected))
+				if (compareClasses(expected, actual))
 					found = true;
 			}
 			if (!found)
@@ -262,6 +303,12 @@ public class ReflectionUtils {
 		return temp.toArray(new Class<?>[0]);
 	}
 
+	/**
+	 * Build a canonical signature for the given method
+	 * 
+	 * @param method
+	 * @return
+	 */
 	private static String methodSignature(Method method) {
 		StringBuilder buffer = new StringBuilder();
 		buffer.append(method.getName());
@@ -276,11 +323,24 @@ public class ReflectionUtils {
 		return buffer.toString();
 	}
 
+	/**
+	 * Build a canonical signature for the given field
+	 * 
+	 * @param field
+	 * @return
+	 */
 	private static String fieldName(Field field) {
 		return Modifier.toString(field.getModifiers()) + " " + field.getType().getSimpleName()
 				+ " " + field.getName();
 	}
 
+	/**
+	 * Convert the given list of individual reports into a single string, with each report on a
+	 * separate line.
+	 * 
+	 * @param a
+	 * @return
+	 */
 	private static String generateReport(List<String> a) {
 		StringBuilder buffer = new StringBuilder();
 		for (String line : a) {
@@ -290,8 +350,42 @@ public class ReflectionUtils {
 		return buffer.toString();
 	}
 
+	/**
+	 * Check a class for extras, and assert that the report is empty
+	 * @param expected
+	 * @param actual
+	 * @param checkPrivates
+	 */
 	public static void checkClassForExtras(Class<?> expected, Class<?> actual, boolean checkPrivates) {
 		List<String> report = checkForExtras(expected, actual, checkPrivates);
 		assertTrue(generateReport(report), report.isEmpty());
+	}
+	
+	/**
+	 * Compares two arrays of classes by binary name.
+	 * 
+	 * @param expected
+	 * @param actual
+	 * @return
+	 */
+	private static boolean compareClassLists(Class<?>[] expected, Class<?>[] actual) {
+		if (actual.length != expected.length)
+			return false;
+		for (int i = 0; i < expected.length; i++) {
+			if (!compareClasses(expected[i], actual[i]))
+				return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Compare two classes by binary name
+	 * 
+	 * @param expected
+	 * @param actual
+	 * @return
+	 */
+	private static boolean compareClasses(Class<?> expected, Class<?> actual) {
+		return expected.getName().equals(actual.getName());
 	}
 }
