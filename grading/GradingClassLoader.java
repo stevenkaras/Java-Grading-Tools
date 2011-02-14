@@ -64,6 +64,7 @@ public class GradingClassLoader extends URLClassLoader {
 		}
 		// check in the list of overrides
 		if (!classes.contains(name)) {
+			//TODO: make this look only in the standard space.
 			return super.loadClass(name, resolve);
 		}
 		// look for the class on our own.
