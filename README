@@ -20,3 +20,8 @@ of Herzliyah, Israel. The project currently has several components:
 Usage
 ===========================================================
 See javadoc.
+
+Building from source
+===========================================================
+If you want to build from source, bear in mind the ant script does not handle dependencies, so you
+need to have junit in the classpath when compiling. It's on my todo list, don't worry....

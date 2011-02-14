@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="dist-zip" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project default="dist-zip">
 	<!-- Project Properties -->
 	<property name="srcdir" value="${basedir}" />
 	<property name="bindir" value="${basedir}" />
@@ -25,16 +25,7 @@
 			</fileset>
 		</delete>
 	</target>
-	<target name="clean-cache" description="--> clean the ivy cache">
-		<ivy:cleancache />
-	</target>
-	<target name="resolve" description="--> retrieve dependencies with ivy">
-		<ivy:retrieve />
-	</target>
-	<target name="report" depends="resolve" description="--> generates a report of dependencies">
-		<ivy:report todir="${basedir}" />
-	</target>
-	<target name="compile" description="--> compile sources for the project" depends="resolve">
+	<target name="compile" description="--> compile sources for the project">
 		<javac srcdir="${srcdir}" destdir="${bindir}" />
 	</target>
 	<target name="jar" description="--> create a runnable jar for this project" depends="compile">
