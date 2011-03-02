@@ -1,3 +1,22 @@
+/**
+ * GradingClassLoader.java
+ * 
+ * Copyright (C) 2010-2011
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * See README for contact information. See LICENSE for GPL license
+ */
 package grading;
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -10,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.After;
+import org.junit.BeforeClass;
 
 /**
  * This is a custom URLClassLoader that will make on the fly replacement of
@@ -29,10 +49,11 @@ public class GradingClassLoader extends URLClassLoader {
 	public Collection<String> classes = Collections
 			.synchronizedList(new ArrayList<String>());
 
-	/**
-	 * This holds the name of the test class
-	 */
+	/** This name of the test class */
 	private Class<?> testClass;
+	
+	/** Indicates whether the BeforeClass hooks have been run yet or not */
+	private boolean runBeforeClasses = false;
 	
 	/**
 	 * This is the instance of the test class we'll use for testing
@@ -128,6 +149,10 @@ public class GradingClassLoader extends URLClassLoader {
 		String testName = cst[2].getMethodName();
 		String callersName = cst[2].getClassName();
 		try {
+			if (runBeforeClasses) {
+				runAll(BeforeClass.class);
+				runBeforeClasses = true;
+			}
 			runAll(Before.class);
 			testClass.getMethod(testName).invoke(instance);
 		} catch (InvocationTargetException e) {
