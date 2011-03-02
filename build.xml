@@ -15,20 +15,8 @@
 		<include name="**/*.class" />
 	</fileset>
 
-	<!-- Standard Targets -->
-	<target name="clean" description="--> clean all build artifacts from the project">
-		<delete>
-			<fileset refid="classes" />
-			<fileset dir="${basedir}">
-				<include name="${project.name}.jar" />
-				<include name="${project.name}.zip" />
-			</fileset>
-		</delete>
-	</target>
-	<target name="compile" description="--> compile sources for the project">
-		<javac srcdir="${srcdir}" destdir="${bindir}" />
-	</target>
-	<target name="jar" description="--> create a runnable jar for this project" depends="compile">
+	<!-- Internal Targets -->
+	<target name="-create-jar">
 		<tstamp prefix="build">
 			<format property="TODAY" pattern="d-MMMM-yyyy" locale="en" />
 		</tstamp>
@@ -42,6 +30,22 @@
 			</manifest>
 		</jar>
 	</target>
+	
+	<!-- Standard Targets -->
+	<target name="clean" description="--> clean all build artifacts from the project">
+		<delete>
+			<fileset refid="classes" />
+			<fileset dir="${basedir}">
+				<include name="${project.name}.jar" />
+				<include name="${project.name}.zip" />
+			</fileset>
+		</delete>
+	</target>
+	<target name="compile" description="--> compile sources for the project">
+		<javac srcdir="${srcdir}" destdir="${bindir}" />
+	</target>
+	<target name="jar" description="--> create a runnable jar for this project" depends="compile, -create-jar">
+	</target>
 	<target name="dist-zip" description="--> create a distribution of the project" depends="jar">
 		<zip destfile="${project.name}.zip">
 			<fileset refid="resources" />
@@ -52,15 +56,4 @@
 	</target>
 
 	<!-- Special Targets -->
-	<target name="vBox" depends="dist-zip">
-		<copy file="${project.name}.zip" toFile="D:\SharedVbox\${project.name}.zip" />
-	</target>
-	<target name="local" depends="jar">
-		<copy toDir="C:\Users\Steven Karas\Desktop\test">
-			<fileset refid="resources" />
-			<fileset dir="${basedir}">
-				<include name="${project.name}.jar" />
-			</fileset>
-		</copy>
-	</target>
 </project>
