@@ -27,6 +27,8 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -150,10 +152,10 @@ public class GradingClassLoader extends URLClassLoader {
 		String callersName = cst[2].getClassName();
 		try {
 			if (runBeforeClasses) {
-				runAll(BeforeClass.class);
+				runAll(BeforeClass.class, true);
 				runBeforeClasses = true;
 			}
-			runAll(Before.class);
+			runAll(Before.class, true);
 			testClass.getMethod(testName).invoke(instance);
 		} catch (InvocationTargetException e) {
 			Throwable t = e.getCause();
@@ -170,8 +172,18 @@ public class GradingClassLoader extends URLClassLoader {
 			t.setStackTrace(result.toArray(new StackTraceElement[0]));
 			throw t;
 		} finally {
-			runAll(After.class);
+			runAll(After.class, false);
 		}
+	}
+	
+	/**
+	 * Runs the AfterClass annotated methods of a class.
+	 * 
+	 * @throws Throwable
+	 */
+	public void runAfterClass() throws Throwable {
+		runAll(AfterClass.class, false);
+		runBeforeClasses = false;
 	}
 	
 	/**
@@ -179,14 +191,27 @@ public class GradingClassLoader extends URLClassLoader {
 	 * the local instance of that test class.
 	 * 
 	 * @param annotation
+	 * @param parentFirst Execute methods in parent classes first?
 	 * @throws Throwable
 	 */
-	private void runAll(Class<? extends Annotation> annotation) throws Throwable {
-		for (Method m : testClass.getMethods()) {
-			if (m.getAnnotation(annotation) == null) {
-				continue;
+	private void runAll(Class<? extends Annotation> annotation, boolean parentFirst) throws Throwable {
+		ArrayList<Class<?>> classes = new ArrayList<Class<?>>();
+		Class<?> current = testClass;
+		while (current != null) {
+			classes.add(current);
+			current = current.getSuperclass();
+		}
+		if (parentFirst) {
+			Collections.reverse(classes);
+		}
+		
+		for (Class<?> clazz : classes) {
+			for (Method m : clazz.getDeclaredMethods()) {
+				if (m.getAnnotation(annotation) == null) {
+					continue;
+				}
+				m.invoke(instance);
 			}
-			m.invoke(instance);
 		}
 	}
 }
