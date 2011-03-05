@@ -210,7 +210,11 @@ public class GradingClassLoader extends URLClassLoader {
 				if (m.getAnnotation(annotation) == null) {
 					continue;
 				}
-				m.invoke(instance);
+				try {
+					m.invoke(instance);
+				} catch (Exception e) {
+					// ignore exceptions
+				}
 			}
 		}
 	}
