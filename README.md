@@ -1,10 +1,12 @@
 Java Grading Tools
+===========================================================
 
 Authors
 ===========================================================
 Steven Karas
 Idan Felix
 The entire Intro2CS team
+
 
 Description
 ===========================================================
@@ -17,11 +19,16 @@ of Herzliyah, Israel. The project currently has several components:
 4. TestUtils - Used to disable System.exit(), etc.
 5. GeneralTest - An abstract base class that enables common features for JUnit tests. 
 
+
 Usage
 ===========================================================
 See javadoc.
 
+
 Building from source
 ===========================================================
-If you want to build from source, bear in mind the ant script does not handle dependencies, so you
-need to have junit in the classpath when compiling. It's on my todo list, don't worry....
+From within eclipse or from the command line using Ant+Ivy.
+Note: you may need to configure eclipse's ant to recognize ivy.
+
+Final caveat: I have a bug in my eclipse workspace that prevents me from properly testing this,
+and it failed when I tried from the command line. Good luck building it yourself!

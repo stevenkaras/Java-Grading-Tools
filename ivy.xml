@@ -1,0 +1,13 @@
+<ivy-module version="2.0">
+	<info organisation="Northern Crane Inc." module="Java Grading Tools" revision="1.0"
+		status="integration">
+		<ivyauthor name="Steven Karas" url="mailto:steven.karas@northerncranesw.com" />
+
+		<description>
+			Common utilities used for grading Java homework assignments with JUnit.
+		</description>
+	</info>
+	<dependencies>
+		<dependency org="junit" name="junit" rev="4.8.1"/>
+	</dependencies>
+</ivy-module>

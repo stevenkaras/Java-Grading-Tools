@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="dist-zip">
+<project default="dist-zip" xmlns:ivy="antlib:org.apache.ivy.ant">
 	<!-- Project Properties -->
 	<property name="srcdir" value="${basedir}" />
 	<property name="bindir" value="${basedir}" />
@@ -15,8 +15,29 @@
 		<include name="**/*.class" />
 	</fileset>
 
-	<!-- Internal Targets -->
-	<target name="-create-jar">
+	<!-- Standard Targets -->
+	<target name="clean" description="--> clean all build artifacts from the project">
+		<delete>
+			<fileset refid="classes" />
+			<fileset dir="${basedir}">
+				<include name="${project.name}.jar" />
+				<include name="${project.name}.zip" />
+			</fileset>
+		</delete>
+	</target>
+	<target name="clean-cache" description="--> clean the ivy cache">
+		<ivy:cleancache />
+	</target>
+	<target name="resolve" description="--> retrieve dependencies with ivy">
+		<ivy:retrieve />
+	</target>
+	<target name="report" depends="resolve" description="--> generates a report of dependencies">
+		<ivy:report todir="${basedir}" />
+	</target>
+	<target name="compile" description="--> compile sources for the project" depends="resolve">
+		<javac srcdir="${srcdir}" destdir="${bindir}" />
+	</target>
+	<target name="jar" description="--> create a runnable jar for this project" depends="compile">
 		<tstamp prefix="build">
 			<format property="TODAY" pattern="d-MMMM-yyyy" locale="en" />
 		</tstamp>
@@ -30,22 +51,6 @@
 			</manifest>
 		</jar>
 	</target>
-	
-	<!-- Standard Targets -->
-	<target name="clean" description="--> clean all build artifacts from the project">
-		<delete>
-			<fileset refid="classes" />
-			<fileset dir="${basedir}">
-				<include name="${project.name}.jar" />
-				<include name="${project.name}.zip" />
-			</fileset>
-		</delete>
-	</target>
-	<target name="compile" description="--> compile sources for the project">
-		<javac srcdir="${srcdir}" destdir="${bindir}" />
-	</target>
-	<target name="jar" description="--> create a runnable jar for this project" depends="compile, -create-jar">
-	</target>
 	<target name="dist-zip" description="--> create a distribution of the project" depends="jar">
 		<zip destfile="${project.name}.zip">
 			<fileset refid="resources" />
@@ -56,4 +61,15 @@
 	</target>
 
 	<!-- Special Targets -->
+	<target name="vBox" depends="dist-zip">
+		<copy file="${project.name}.zip" toFile="D:\SharedVbox\${project.name}.zip" />
+	</target>
+	<target name="local" depends="jar">
+		<copy toDir="C:\Users\Steven Karas\Desktop\test">
+			<fileset refid="resources" />
+			<fileset dir="${basedir}">
+				<include name="${project.name}.jar" />
+			</fileset>
+		</copy>
+	</target>
 </project>
